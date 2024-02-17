@@ -1,5 +1,7 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
+
 
 class Terrain:
     def __init__(self, width, length, ratio, depart, arrivee):
@@ -145,3 +147,4 @@ plt.show()
 
 # Equation de chute libre, pas de frottements pour l'instant
 
+# On a implémenté l'algorithme de parcours en largeur et il est évident que ce n'est pas le meilleur. C'est pourquoi on va d'emblée commencer l'implémentation de l'algorithme A étoile
