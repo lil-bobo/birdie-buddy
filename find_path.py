@@ -61,7 +61,7 @@ def creer_grille(terrain, obstacles):
 
 def upscale(vec, scale):
     x, y = vec
-    return (scale * x, scale * y)
+    return (int(scale * x), int(scale * y))
 
 def parcours_en_largeur(terrain, grille):
     visited = np.zeros((terrain.length * terrain.ratio, terrain.width * terrain.ratio))
@@ -78,9 +78,42 @@ def parcours_en_largeur(terrain, grille):
                 visited[ny][nx] = 1
     return queue
 
+def reconstruct_path(parents, goal, start):
+    path = [goal]
+    current = goal
+    while current != start:
+        current = parents[current]
+        path.insert(0, current)
+    return path
 
-
-
+def astar(terrain, grille):
+    parents = {}
+    def heuristique(s1, s2):
+        return abs(s1[0] - s2[0]) + abs(s1[1] - s2[1])
+    start = upscale(terrain.depart, terrain.ratio)
+    goal = upscale(terrain.arrivee, terrain.ratio)
+    queue = []
+    vus = set()
+    queue.append((heuristique(start, goal), start, 0))
+    while queue:
+        queue.sort(reverse=True)
+        _, s, dist = queue.pop()
+        if s == goal:
+            # renvoyer dist, vus etc
+            return (reconstruct_path(parents, goal, start)), vus
+        else:
+            voisins = []
+            for dx, dy in [(-1, 0), (0, -1), (1, 0), (0, 1)]:
+                new_x, new_y = s[0] + dx, s[1] + dy
+                if 0 <= new_x < terrain.width * terrain.ratio and 0 <= new_y < terrain.length * terrain.ratio:
+                    if grille[new_y][new_x] != 1:
+                        voisins.append((new_x, new_y))
+            for v in voisins:
+                if v not in vus:
+                    parents[v] = s
+                    vus.add(v)
+                    queue.append((dist + 1 + heuristique(v, goal), v, dist + 1))
+    return None
 
 theta = np.pi / 4 # radians
 m = 46 / 1000 # 46 grammes en kilogrammes
@@ -125,11 +158,14 @@ res = creer_grille(terrain, obstacles)
 chemin = parcours_en_largeur(terrain, res)
 for (x, y) in chemin:
     res[y][x] = 2
-chute = chute_libre(terrain, chemin)
-# print(chute)
-for (x, y) in chute:
-    print()
-    res[y][x] = 3
+
+meilleur_chemin, vus = astar(terrain, res)
+print(meilleur_chemin)
+for (x, y) in meilleur_chemin:
+    res[y][x] = 4
+# chute = chute_libre(terrain, chemin)
+# for (x, y) in chute:
+#     res[y][x] = 3
 plt.imshow(res, origin='lower')
 plt.show()
 
