@@ -71,7 +71,7 @@ def parcours_en_largeur(terrain, grille):
         x, y = position
         if position == upscale(terrain.arrivee, terrain.ratio):
             return path
-        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        for dx, dy in [(1, 0), (-1, 0), (0, -1), (0, 1)]:
             nx, ny = x + dx, y + dy
             if 0 <= nx < terrain.width * terrain.ratio and 0 <= ny < terrain.length * terrain.ratio and grille[ny][nx] != 1 and not visited[ny][nx]:
                 queue.append(((nx, ny), path + [(nx, ny)]))
@@ -86,6 +86,9 @@ def reconstruct_path(parents, goal, start):
         path.insert(0, current)
     return path
 
+def norme(dx, dy):
+    return abs(dx) + abs(dy)
+
 def astar(terrain, grille):
     parents = {}
     def heuristique(s1, s2):
@@ -96,14 +99,14 @@ def astar(terrain, grille):
     vus = set()
     queue.append((heuristique(start, goal), start, 0))
     while queue:
-        queue.sort(reverse=True)
+        queue.sort(reverse=True, key=lambda x: x[0])
         _, s, dist = queue.pop()
         if s == goal:
             # renvoyer dist, vus etc
             return (reconstruct_path(parents, goal, start)), vus
         else:
             voisins = []
-            for dx, dy in [(-1, 0), (0, -1), (1, 0), (0, 1)]:
+            for dx, dy in [(1, 0), (0, -1), (-1, 0), (0, 1), (-1, 1), (-1, -1), (1, -1), (1, 1)]:
                 new_x, new_y = s[0] + dx, s[1] + dy
                 if 0 <= new_x < terrain.width * terrain.ratio and 0 <= new_y < terrain.length * terrain.ratio:
                     if grille[new_y][new_x] != 1:
@@ -112,7 +115,8 @@ def astar(terrain, grille):
                 if v not in vus:
                     parents[v] = s
                     vus.add(v)
-                    queue.append((dist + 1 + heuristique(v, goal), v, dist + 1))
+                    d = norme(dx, dy)
+                    queue.append((dist + d + heuristique(v, goal), v, dist + d))
     return None
 
 theta = np.pi / 4 # radians
@@ -145,7 +149,7 @@ def chute_libre(terrain, chemin):
 
 fig, ax = plt.subplots()
 
-terrain = Terrain(10, 20, 10, (8, 2), (1.2, 18))
+terrain = Terrain(10, 20, 30, (8, 2), (1.2, 18))
 
 obstacles = [
     Obstacle(1, 2, 2),
@@ -160,7 +164,7 @@ for (x, y) in chemin:
     res[y][x] = 2
 
 meilleur_chemin, vus = astar(terrain, res)
-print(meilleur_chemin)
+# print(meilleur_chemin)
 for (x, y) in meilleur_chemin:
     res[y][x] = 4
 # chute = chute_libre(terrain, chemin)
@@ -168,6 +172,7 @@ for (x, y) in meilleur_chemin:
 #     res[y][x] = 3
 plt.imshow(res, origin='lower')
 plt.show()
+# plt.savefig('foo.png')
 
 # On va fixer les obstacles pour l'instant : FAIT
 
