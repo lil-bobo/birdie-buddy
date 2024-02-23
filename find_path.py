@@ -71,7 +71,7 @@ def parcours_en_largeur(terrain, grille):
         x, y = position
         if position == upscale(terrain.arrivee, terrain.ratio):
             return path
-        for dx, dy in [(1, 0), (-1, 0), (0, -1), (0, 1)]:
+        for dx, dy in [(1, 0), (-1, 0), (0, -1), (0, 1), (1, 1), (-1, 1), (1, -1), (-1, -1)]:
             nx, ny = x + dx, y + dy
             if 0 <= nx < terrain.width * terrain.ratio and 0 <= ny < terrain.length * terrain.ratio and grille[ny][nx] != 1 and not visited[ny][nx]:
                 queue.append(((nx, ny), path + [(nx, ny)]))
@@ -89,6 +89,8 @@ def reconstruct_path(parents, goal, start):
 def norme(dx, dy):
     return abs(dx) + abs(dy)
 
+import heapq
+
 def astar(terrain, grille):
     parents = {}
     def heuristique(s1, s2):
@@ -97,10 +99,10 @@ def astar(terrain, grille):
     goal = upscale(terrain.arrivee, terrain.ratio)
     queue = []
     vus = set()
-    queue.append((heuristique(start, goal), start, 0))
+    heapq.heappush(queue, (heuristique(start, goal), start, 0))
     while queue:
-        queue.sort(reverse=True, key=lambda x: x[0])
-        _, s, dist = queue.pop()
+        # queue.sort(reverse=True, key=lambda x: x[0])
+        _, s, dist = heapq.heappop(queue)
         if s == goal:
             # renvoyer dist, vus etc
             return (reconstruct_path(parents, goal, start)), vus
@@ -116,7 +118,7 @@ def astar(terrain, grille):
                     parents[v] = s
                     vus.add(v)
                     d = norme(dx, dy)
-                    queue.append((dist + d + heuristique(v, goal), v, dist + d))
+                    heapq.heappush(queue, (dist + d + heuristique(v, goal), v, dist + d))
     return None
 
 theta = np.pi / 4 # radians
@@ -147,7 +149,7 @@ def chute_libre(terrain, chemin):
             rest.append((int(x), int(y)))
     return rest
 
-fig, ax = plt.subplots()
+# fig, ax = plt.subplots()
 
 terrain = Terrain(10, 20, 30, (8, 2), (1.2, 18))
 
@@ -159,19 +161,19 @@ obstacles = [
 ]
 
 res = creer_grille(terrain, obstacles)
-chemin = parcours_en_largeur(terrain, res)
-for (x, y) in chemin:
-    res[y][x] = 2
+# chemin = parcours_en_largeur(terrain, res)
+# for (x, y) in chemin:
+#     res[y][x] = 2
 
 meilleur_chemin, vus = astar(terrain, res)
 # print(meilleur_chemin)
-for (x, y) in meilleur_chemin:
-    res[y][x] = 4
+# for (x, y) in meilleur_chemin:
+#     res[y][x] = 4
 # chute = chute_libre(terrain, chemin)
 # for (x, y) in chute:
 #     res[y][x] = 3
-plt.imshow(res, origin='lower')
-plt.show()
+# plt.imshow(res, origin='lower')
+# plt.show()
 # plt.savefig('foo.png')
 
 # On va fixer les obstacles pour l'instant : FAIT
